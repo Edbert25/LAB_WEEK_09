@@ -16,10 +16,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
 
@@ -32,8 +37,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val list = listOf("Tanu", "Tina", "Tono")
-                    Home(list)
+                    Home()
                 }
             }
         }
@@ -41,8 +45,36 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Home(
-    items: List<String>,
+fun Home() {
+    val listData = remember {
+        mutableStateListOf(
+            Student("Tanu"),
+            Student("Tina"),
+            Student("Tono")
+        )
+    }
+
+    var inputField by remember { mutableStateOf(Student("")) }
+
+    HomeContent(
+        listData,
+        inputField,
+        { input -> inputField = inputField.copy(name = input) },
+        {
+            if (inputField.name.isNotBlank()) {
+                listData.add(inputField)
+                inputField = Student("")
+            }
+        }
+    )
+}
+
+@Composable
+fun HomeContent(
+    listData: SnapshotStateList<Student>,
+    inputField: Student,
+    onInputValueChange: (String) -> Unit,
+    onButtonClick: () -> Unit
 ) {
     LazyColumn {
         item {
@@ -53,32 +85,34 @@ fun Home(
                 Text(text = stringResource(id = R.string.enter_item))
 
                 TextField(
-                    value = "",
+                    value = inputField.name,
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number
+                        keyboardType = KeyboardType.Text
                     ),
-                    onValueChange = { }
+                    onValueChange = {
+                        onInputValueChange(it)
+                    }
                 )
 
-                Button(onClick = { }) {
+                Button(onClick = {
+                    onButtonClick()
+                }) {
                     Text(text = stringResource(id = R.string.button_click))
                 }
             }
         }
 
-        items(items) { item ->
+        items(listData) { item ->
             Column(
                 modifier = Modifier.padding(vertical = 4.dp).fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = item)
+                Text(text = item.name)
             }
         }
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewHome() {
-    Home(listOf("Tanu", "Tina", "Tono"))
-}
+data class Student(
+    var name: String
+)
