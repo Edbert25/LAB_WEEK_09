@@ -35,6 +35,8 @@ import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
 import com.example.lab_week_09.ui.theme.OnBackgroundItemText
 import com.example.lab_week_09.ui.theme.OnBackgroundTitleText
 import com.example.lab_week_09.ui.theme.PrimaryTextButton
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -100,7 +102,19 @@ fun Home(
                 inputField = Student("")
             }
         },
-        { navigateFromHomeToResult(listData.toList().toString()) }
+        {
+            val moshi = Moshi.Builder()
+                .add(KotlinJsonAdapterFactory())
+                .build()
+            val jsonAdapter = moshi.adapter<List<Student>>(
+                com.squareup.moshi.Types.newParameterizedType(
+                    List::class.java,
+                    Student::class.java
+                )
+            )
+            val json = jsonAdapter.toJson(listData.toList())
+            navigateFromHomeToResult(json)
+        }
     )
 }
 
@@ -158,13 +172,43 @@ fun HomeContent(
 
 @Composable
 fun ResultContent(listData: String) {
-    Column(
+    val moshi = Moshi.Builder()
+        .add(KotlinJsonAdapterFactory())
+        .build()
+
+    val jsonAdapter = moshi.adapter<List<Student>>(
+        com.squareup.moshi.Types.newParameterizedType(
+            List::class.java,
+            Student::class.java
+        )
+    )
+
+    val students = try {
+        jsonAdapter.fromJson(listData) ?: emptyList()
+    } catch (e: Exception) {
+        emptyList()
+    }
+
+    LazyColumn(
         modifier = Modifier
-            .padding(vertical = 4.dp)
+            .padding(16.dp)
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        OnBackgroundItemText(text = listData)
+        item {
+            OnBackgroundTitleText(text = "Result List")
+        }
+
+        items(students) { student ->
+            Column(
+                modifier = Modifier
+                    .padding(vertical = 4.dp)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                OnBackgroundItemText(text = student.name)
+            }
+        }
     }
 }
 
